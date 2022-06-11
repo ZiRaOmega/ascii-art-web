@@ -1,0 +1,25 @@
+{{define "index"}}<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>Essai</title>
+		<link rel="stylesheet" href="./static/style.css">
+	</head>
+	<body>
+		<div class="FORM">
+        <form method="POST" action="/ascii-art">
+            <textarea name="inputText" class="TextInput" style="width:234px;">Type Something </textarea>
+			<select id="fontList" name="Font" class="fontlist">
+				<optgroup label="Featured FIGlet Fonts">
+				<option value="shadow">SHADOW</option>
+				<option value="standard">standard</option>
+				<option value="thinkertoy">thinkertoy</option>
+				</optgroup>
+										</select>
+            <input class="Submit_button" type="submit"></input>
+        </form>
+	</div>
+	<textarea disabled name="inputText" class="TextInput" style="width:100%; padding-bottom: 20%; margin-top: 2%; resize: none;">{{.}} </textarea>
+	</body>
+</html>
+{{end}}

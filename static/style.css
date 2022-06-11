@@ -1,3 +1,19 @@
 body {
     background-color: rgb(17, 14, 40);
 }
+
+.FORM{
+    text-align: center;
+    display: flex;
+    justify-content: center;
+}
+
+.TextInput{
+    text-align: center;
+    display:flex;
+    justify-content: center;
+}
+
+.Submit_button{
+    margin-top: 15%;
+}
