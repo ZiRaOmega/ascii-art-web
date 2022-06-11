@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 	"os"
@@ -10,7 +11,7 @@ import (
 )
 
 type Page struct {
-	Valeur string
+	response string
 }
 
 func Get_ascii_char(caractere string, Font string) []string {
@@ -50,35 +51,71 @@ func Show_ascii(ascii_char []string) string {
 	}
 	return result
 }
-func hello(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/" && r.URL.Path != "/static/style.css" {
-		http.Error(w, "404 not found.", http.StatusNotFound)
-		fmt.Println("Status code : 404")
-		return
-	}
-
+func ascii_art(w http.ResponseWriter, r *http.Request) {
+	Status_code(w, r)
 	switch r.Method {
 	case "GET":
-		//
 		http.ServeFile(w, r, "index.html")
 	case "POST":
 		// Call ParseForm() to parse the raw query and update r.PostForm and r.Form.
+
 		if err := r.ParseForm(); err != nil {
 			fmt.Fprintf(w, "ParseForm() err: %v", err)
 			return
 		}
-		//fmt.Fprintf(w, "Post from website! r.PostFrom = %v\n", r.PostForm)
 		inputText := r.FormValue("inputText")
 		Font := r.FormValue("Font")
 		to_print_slice := strings.Split(inputText, "\\n")
 		for i := 0; i < len(to_print_slice); i++ {
 			fmt.Fprintf(w, "%s", Show_ascii(Get_ascii_char(to_print_slice[i], Font)))
 		}
-		//fmt.Fprintf(w, "%s", Show_ascii(Get_ascii_char(inputText)))
 	default:
 		fmt.Fprintf(w, "Sorry, only GET and POST methods are supported.")
 	}
 }
+func viewHandler(w http.ResponseWriter, r *http.Request) {
+	// Création d'une page
+	inputText := r.FormValue("inputText")
+	Font := r.FormValue("Font")
+	to_print_slice := strings.Split(inputText, "\\n")
+
+	// Création d'une nouvelle instance de template
+	t := template.New("index")
+
+	// Déclaration des fichiers à parser
+	t = template.Must(t.ParseFiles("./templates/index.html", "./static/style.css", "./favicon.ico"))
+
+	// Exécution de la fusion et injection dans le flux de sortie
+	// La variable p sera réprésentée par le "." dans le layout
+	// Exemple {{.}} == p
+	var result string
+	code := Status_code(w, r)
+	if code == 404 {
+		return
+	}
+	for i := 0; i < len(to_print_slice); i++ {
+		//fmt.Fprintf(w, "%s", Show_ascii(Get_ascii_char(to_print_slice[i], Font)))
+		result += Show_ascii(Get_ascii_char(to_print_slice[i], Font))
+	}
+	p := result
+	err := t.ExecuteTemplate(w, "index", p)
+
+	if err != nil {
+		log.Fatalf("Template execution: %s", err)
+	}
+}
+func Status_code(w http.ResponseWriter, r *http.Request) int {
+	if r.URL.Path != "/" && r.URL.Path != "/static/style.css" && r.URL.Path != "/favicon.ico" && r.URL.Path != "/ascii-art" {
+		http.Error(w, "404 not found.", http.StatusNotFound)
+		fmt.Println("404 on " + "http://localhost:8080" + r.URL.Path)
+		return 404
+	} else {
+		fmt.Println("200 on " + "http://localhost:8080" + r.URL.Path)
+		return 200
+	}
+
+}
+
 func style(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "./static/style.css")
 	return
@@ -88,9 +125,10 @@ func favicon(w http.ResponseWriter, r *http.Request) {
 	return
 }
 func main() {
-	http.HandleFunc("/", hello)
+	http.HandleFunc("/", viewHandler)
+	http.HandleFunc("/ascii-art", viewHandler)
 	http.HandleFunc("/static/style.css", style)
-	http.HandleFunc("/favicon.ico", favicon)
+	//http.HandleFunc("/favicon.ico", favicon)
 	fmt.Printf("Starting server for testing HTTP POST on http://localhost:8080 ...\n")
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		log.Fatal(err)
