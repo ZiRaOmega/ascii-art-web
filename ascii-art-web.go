@@ -56,25 +56,24 @@ func Show_ascii(ascii_char []string) string {
 }
 
 func viewHandler(w http.ResponseWriter, r *http.Request) {
+	var result string
+
 	//Récupération Du Texte à Transformer envoyé par la methode Post
 	inputText := r.FormValue("inputText")
-
 	Font := r.FormValue("Font")
+
 	//Suppression des caractère de Retour a la ligne
 	inputText = strings.Replace(inputText, `\n`, "\n", -1)
 	inputText = strings.Replace(inputText, `\r`, "\n", -1)
 	to_print_slice := strings.Split(inputText, "\n")
+
 	// Création d'une nouvelle instance de template
 	t := template.New("index")
 
 	// Déclaration des fichiers à parser
 	t = template.Must(t.ParseFiles("./templates/index.html", "./static/style.css", "./favicon.ico"))
 
-	// Exécution de la fusion et injection dans le flux de sortie
-	// La variable p sera réprésentée par le "." dans le layout
-	// Exemple {{.}} == p
-	var result string
-	//Log console Status Code
+	//Log console Status Code 400 Rouge, 200 Vert
 	code := Status_code(w, r)
 	if code == 400 {
 		http.Error(w, "400 Bad Requests.", http.StatusBadRequest)
@@ -83,6 +82,8 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		fmt.Println(color.ANSI_COLOR("GREEN") + strconv.Itoa(code) + " on " + "http://localhost:8080" + r.URL.Path + color.ANSI_COLOR("RESET"))
 	}
+
+	//Mise en forme du Resultat en Ascii
 	for i := 0; i < len(to_print_slice); i++ {
 		if (i < len(to_print_slice[i])) && to_print_slice[i][(len(to_print_slice[i])-1):] != "\r" {
 			result += Show_ascii(Get_ascii_char(to_print_slice[i], Font))
@@ -91,15 +92,18 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 			result += Show_ascii(Get_ascii_char(to_print_slice[i], Font))
 
 		}
-
 	}
-	//Creation d'une Page avec la valeur ascii et la taille du textarea
+
+	//Creation d'une Page avec la valeur ascii et la taille du textarea avec un taille supérieur à 175
 	col := len(strings.Join(to_print_slice, "")) * 5
 	if len(strings.Join(to_print_slice, ""))*5 < 175 {
 		col = 175
 	}
 	p := Page{result, col, len(to_print_slice) * 9, inputText}
+
 	//On lance la template index avec la valeur P en valeur
+	// La Page p sera réprésentée par le "." suivi de la variable Ex: p.Ascii et {{.Ascii}} dans notre Template
+	// Exemple {{.}} == p
 	err := t.ExecuteTemplate(w, "index", p)
 
 	if err != nil {
@@ -132,12 +136,13 @@ func favicon(w http.ResponseWriter, r *http.Request) {
 	return
 }
 func main() {
+
 	//HandleFunc Permet de definir les endpoints
 	http.HandleFunc("/", viewHandler)
 	http.HandleFunc("/ascii-art", viewHandler)
 	http.HandleFunc("/static/style.css", style)
-	//http.HandleFunc("/favicon.ico", favicon)
 	fmt.Printf("Starting server for testing HTTP POST on http://localhost:8080 ...\n")
+
 	//Commence le serveur sur le Port 8080
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		log.Fatal(err)
