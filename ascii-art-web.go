@@ -15,6 +15,8 @@ import (
 type Page struct {
 	Ascii       string
 	Textareacol int
+	Textarealin int
+	Text        string
 }
 
 func Get_ascii_char(caractere string, Font string) []string {
@@ -41,47 +43,27 @@ func Show_ascii(ascii_char []string) string {
 	nbr_lettre := len(ascii_char) / 9
 	var word_array []string
 	var result string
-	for y := 1; y < 9; y++ {
+	for y := 0; y < 9; y++ {
 		for i := y; i < nbr_lettre*9; i += 9 {
 			word_array = append(word_array, ascii_char[i])
 			if ascii_char[i] != "\n" {
-				//fmt.Print(ascii_char[i])
 				result += ascii_char[i]
 			}
 		}
-		//fmt.Println("")
 		result += "\n"
 	}
 	return result
 }
-func ascii_art(w http.ResponseWriter, r *http.Request) {
-	Status_code(w, r)
-	switch r.Method {
-	case "GET":
-		http.ServeFile(w, r, "index.html")
-	case "POST":
-		// Call ParseForm() to parse the raw query and update r.PostForm and r.Form.
 
-		if err := r.ParseForm(); err != nil {
-			fmt.Fprintf(w, "ParseForm() err: %v", err)
-			return
-		}
-		inputText := r.FormValue("inputText")
-		Font := r.FormValue("Font")
-		to_print_slice := strings.Split(inputText, "\\n")
-		for i := 0; i < len(to_print_slice); i++ {
-			fmt.Fprintf(w, "%s", Show_ascii(Get_ascii_char(to_print_slice[i], Font)))
-		}
-	default:
-		fmt.Fprintf(w, "Sorry, only GET and POST methods are supported.")
-	}
-}
 func viewHandler(w http.ResponseWriter, r *http.Request) {
-	// Création d'une page
+	//Récupération Du Texte à Transformer envoyé par la methode Post
 	inputText := r.FormValue("inputText")
-	Font := r.FormValue("Font")
-	to_print_slice := strings.Split(inputText, "\\n")
 
+	Font := r.FormValue("Font")
+	//Suppression des caractère de Retour a la ligne
+	inputText = strings.Replace(inputText, `\n`, "\n", -1)
+	inputText = strings.Replace(inputText, `\r`, "\n", -1)
+	to_print_slice := strings.Split(inputText, "\n")
 	// Création d'une nouvelle instance de template
 	t := template.New("index")
 
@@ -92,6 +74,7 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 	// La variable p sera réprésentée par le "." dans le layout
 	// Exemple {{.}} == p
 	var result string
+	//Log console Status Code
 	code := Status_code(w, r)
 	if code == 400 {
 		http.Error(w, "400 Bad Requests.", http.StatusBadRequest)
@@ -101,13 +84,22 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(color.ANSI_COLOR("GREEN") + strconv.Itoa(code) + " on " + "http://localhost:8080" + r.URL.Path + color.ANSI_COLOR("RESET"))
 	}
 	for i := 0; i < len(to_print_slice); i++ {
-		//fmt.Fprintf(w, "%s", Show_ascii(Get_ascii_char(to_print_slice[i], Font)))
-		result += Show_ascii(Get_ascii_char(to_print_slice[i], Font))
-	}
-	p := Page{result, len(to_print_slice[0]) * 9}
+		if (i < len(to_print_slice[i])) && to_print_slice[i][(len(to_print_slice[i])-1):] != "\r" {
+			result += Show_ascii(Get_ascii_char(to_print_slice[i], Font))
+		} else if i < len(to_print_slice[i]) {
+			to_print_slice[i] = to_print_slice[i][:len(to_print_slice[i])-1]
+			result += Show_ascii(Get_ascii_char(to_print_slice[i], Font))
 
-	//fmt.Print(len(to_print_slice[0]))
-	//fmt.Println(p.Ascii)
+		}
+
+	}
+	//Creation d'une Page avec la valeur ascii et la taille du textarea
+	col := len(strings.Join(to_print_slice, "")) * 5
+	if len(strings.Join(to_print_slice, ""))*5 < 175 {
+		col = 175
+	}
+	p := Page{result, col, len(to_print_slice) * 9, inputText}
+	//On lance la template index avec la valeur P en valeur
 	err := t.ExecuteTemplate(w, "index", p)
 
 	if err != nil {
@@ -140,11 +132,13 @@ func favicon(w http.ResponseWriter, r *http.Request) {
 	return
 }
 func main() {
+	//HandleFunc Permet de definir les endpoints
 	http.HandleFunc("/", viewHandler)
 	http.HandleFunc("/ascii-art", viewHandler)
 	http.HandleFunc("/static/style.css", style)
 	//http.HandleFunc("/favicon.ico", favicon)
 	fmt.Printf("Starting server for testing HTTP POST on http://localhost:8080 ...\n")
+	//Commence le serveur sur le Port 8080
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		log.Fatal(err)
 	}
