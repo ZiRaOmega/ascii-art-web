@@ -8,18 +8,18 @@
 	<body>
 		<div class="FORM">
         <form method="POST" action="/ascii-art">
-            <textarea name="inputText" class="TextInput" style="width:234px;">Type Something </textarea>
+            <textarea name="inputText" class="TextInput" style="width:234px;">{{.Text}} </textarea>
 			<select id="fontList" name="Font" class="fontlist">
 				<optgroup label="Fonts">
-				<option value="shadow">SHADOW</option>
 				<option value="standard">standard</option>
+				<option value="shadow">SHADOW</option>
 				<option value="thinkertoy">thinkertoy</option>
 				</optgroup>
 										</select>
             <input class="Submit_button" type="submit"></input>
         </form>
 	</div>
-	<textarea disabled name="inputText" rows="9" cols="{{.Textareacol}}" style="width:auto; padding-bottom: 20%; margin-top: 2%; resize: none; text-align: center;">{{.Ascii}} </textarea>
+	<textarea disabled name="inputTextAscii" rows="{{.Textarealin}}" cols="{{.Textareacol}}" style="width:auto; margin-top: 2%; resize: none; text-align: center; display: flex; justify-content: center;">{{.Ascii}} </textarea>
 	
 	</body>
 </html>
