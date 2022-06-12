@@ -41,7 +41,7 @@ func Show_ascii(ascii_char []string) string {
 	nbr_lettre := len(ascii_char) / 9
 	var word_array []string
 	var result string
-	for y := 1; y < 8; y++ {
+	for y := 1; y < 9; y++ {
 		for i := y; i < nbr_lettre*9; i += 9 {
 			word_array = append(word_array, ascii_char[i])
 			if ascii_char[i] != "\n" {
