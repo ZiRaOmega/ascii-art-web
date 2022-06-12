@@ -2,16 +2,19 @@ package main
 
 import (
 	"bufio"
+	"color/color"
 	"fmt"
 	"html/template"
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 )
 
 type Page struct {
-	response string
+	Ascii       string
+	Textareacol int
 }
 
 func Get_ascii_char(caractere string, Font string) []string {
@@ -90,14 +93,21 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 	// Exemple {{.}} == p
 	var result string
 	code := Status_code(w, r)
-	if code == 404 {
+	if code == 400 {
+		http.Error(w, "400 Bad Requests.", http.StatusBadRequest)
+		fmt.Println(color.ANSI_COLOR("RED") + strconv.Itoa(code) + " on " + "http://localhost:8080" + r.URL.Path + color.ANSI_COLOR("RESET"))
 		return
+	} else {
+		fmt.Println(color.ANSI_COLOR("GREEN") + strconv.Itoa(code) + " on " + "http://localhost:8080" + r.URL.Path + color.ANSI_COLOR("RESET"))
 	}
 	for i := 0; i < len(to_print_slice); i++ {
 		//fmt.Fprintf(w, "%s", Show_ascii(Get_ascii_char(to_print_slice[i], Font)))
 		result += Show_ascii(Get_ascii_char(to_print_slice[i], Font))
 	}
-	p := result
+	p := Page{result, len(to_print_slice[0]) * 9}
+
+	//fmt.Print(len(to_print_slice[0]))
+	//fmt.Println(p.Ascii)
 	err := t.ExecuteTemplate(w, "index", p)
 
 	if err != nil {
@@ -105,19 +115,24 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 func Status_code(w http.ResponseWriter, r *http.Request) int {
-	if r.URL.Path != "/" && r.URL.Path != "/static/style.css" && r.URL.Path != "/favicon.ico" && r.URL.Path != "/ascii-art" {
-		http.Error(w, "404 not found.", http.StatusNotFound)
-		fmt.Println("404 on " + "http://localhost:8080" + r.URL.Path)
-		return 404
+	if r.URL.Path == "/" || r.URL.Path == "/static/style.css" || r.URL.Path == "/favicon.ico" || r.URL.Path == "/ascii-art" {
+		return http.StatusOK
 	} else {
-		fmt.Println("200 on " + "http://localhost:8080" + r.URL.Path)
-		return 200
+		return http.StatusBadRequest
 	}
 
 }
 
 func style(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "./static/style.css")
+	code := Status_code(w, r)
+	if code == 400 {
+		http.Error(w, "400 Bad Requests.", http.StatusBadRequest)
+		fmt.Println(color.ANSI_COLOR("RED") + strconv.Itoa(code) + " on " + "http://localhost:8080" + r.URL.Path + color.ANSI_COLOR("RESET"))
+		return
+	} else {
+		fmt.Println(color.ANSI_COLOR("GREEN") + strconv.Itoa(code) + " on " + "http://localhost:8080" + r.URL.Path + color.ANSI_COLOR("RESET"))
+	}
 	return
 }
 func favicon(w http.ResponseWriter, r *http.Request) {

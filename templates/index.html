@@ -10,7 +10,7 @@
         <form method="POST" action="/ascii-art">
             <textarea name="inputText" class="TextInput" style="width:234px;">Type Something </textarea>
 			<select id="fontList" name="Font" class="fontlist">
-				<optgroup label="Featured FIGlet Fonts">
+				<optgroup label="Fonts">
 				<option value="shadow">SHADOW</option>
 				<option value="standard">standard</option>
 				<option value="thinkertoy">thinkertoy</option>
@@ -19,7 +19,8 @@
             <input class="Submit_button" type="submit"></input>
         </form>
 	</div>
-	<textarea disabled name="inputText" class="TextInput" style="width:100%; padding-bottom: 20%; margin-top: 2%; resize: none;">{{.}} </textarea>
+	<textarea disabled name="inputText" rows="9" cols="{{.Textareacol}}" style="width:auto; padding-bottom: 20%; margin-top: 2%; resize: none; text-align: center;">{{.Ascii}} </textarea>
+	
 	</body>
 </html>
 {{end}}
