@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"color/color"
+	"errors"
 	"fmt"
 	"html/template"
 	"log"
@@ -17,6 +18,7 @@ type Page struct {
 	Textareacol int
 	Textarealin int
 	Text        string
+	Title       string
 }
 
 func Get_ascii_char(caractere string, Font string) []string {
@@ -58,7 +60,7 @@ func Show_ascii(ascii_char []string) string {
 func viewHandler(w http.ResponseWriter, r *http.Request) {
 	var result string
 
-	//Récupération Du Texte à Transformer envoyé par la methode Post
+	//Récupération Du Texte à Transformer et du Font choisi envoyé par la methode Post
 	inputText := r.FormValue("inputText")
 	Font := r.FormValue("Font")
 
@@ -75,12 +77,12 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 
 	//Log console Status Code 400 Rouge, 200 Vert
 	code := Status_code(w, r)
-	if code == 400 {
-		http.Error(w, "400 Bad Requests.", http.StatusBadRequest)
-		fmt.Println(color.ANSI_COLOR("RED") + strconv.Itoa(code) + " on " + "http://localhost:8080" + r.URL.Path + color.ANSI_COLOR("RESET"))
+	if code == 400 || code == 404 || code == 403 {
+		http.Error(w, strconv.Itoa(code)+" Bad Requests.", code)
+		fmt.Println(color.ANSI_COLOR("RED") + strconv.Itoa(code) + " on " + r.RemoteAddr + r.URL.Path + color.ANSI_COLOR("RESET"))
 		return
 	} else {
-		fmt.Println(color.ANSI_COLOR("GREEN") + strconv.Itoa(code) + " on " + "http://localhost:8080" + r.URL.Path + color.ANSI_COLOR("RESET"))
+		fmt.Println(color.ANSI_COLOR("GREEN") + strconv.Itoa(code) + " on " + r.RemoteAddr + r.URL.Path + color.ANSI_COLOR("RESET"))
 	}
 
 	//Mise en forme du Resultat en Ascii
@@ -94,12 +96,12 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	//Creation d'une Page avec la valeur ascii et la taille du textarea avec un taille supérieur à 175
-	col := len(strings.Join(to_print_slice, "")) * 5
-	if len(strings.Join(to_print_slice, ""))*5 < 175 {
+	//Creation d'une Page avec la valeur ascii et la taille du textarea avec un taille supérieur à 175 à l'aide de la struc Page
+	col := (len(strings.Join(to_print_slice, "")) / len(to_print_slice)) * 9
+	if col < 175 {
 		col = 175
 	}
-	p := Page{result, col, len(to_print_slice) * 9, inputText}
+	p := Page{result, col, len(to_print_slice) * 9, inputText, inputText}
 
 	//On lance la template index avec la valeur P en valeur
 	// La Page p sera réprésentée par le "." suivi de la variable Ex: p.Ascii et {{.Ascii}} dans notre Template
@@ -111,23 +113,26 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 func Status_code(w http.ResponseWriter, r *http.Request) int {
-	if r.URL.Path == "/" || r.URL.Path == "/static/style.css" || r.URL.Path == "/favicon.ico" || r.URL.Path == "/ascii-art" {
-		return http.StatusOK
-	} else {
-		return http.StatusBadRequest
-	}
 
+	if r.URL.Path == "/" || r.URL.Path == "/ascii-art" {
+		return http.StatusOK
+	} else if _, err := os.Stat("." + r.URL.Path); errors.Is(err, os.ErrNotExist) {
+		//fmt.Println("erreur")
+		return http.StatusNotFound
+	} else {
+		return http.StatusOK
+	}
 }
 
 func style(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "./static/style.css")
 	code := Status_code(w, r)
-	if code == 400 {
+	if code == 400 || code == 404 || code == 403 {
 		http.Error(w, "400 Bad Requests.", http.StatusBadRequest)
-		fmt.Println(color.ANSI_COLOR("RED") + strconv.Itoa(code) + " on " + "http://localhost:8080" + r.URL.Path + color.ANSI_COLOR("RESET"))
+		fmt.Println(color.ANSI_COLOR("RED") + strconv.Itoa(code) + " on " + r.RemoteAddr + r.URL.Path + color.ANSI_COLOR("RESET"))
 		return
 	} else {
-		fmt.Println(color.ANSI_COLOR("GREEN") + strconv.Itoa(code) + " on " + "http://localhost:8080" + r.URL.Path + color.ANSI_COLOR("RESET"))
+		fmt.Println(color.ANSI_COLOR("GREEN") + strconv.Itoa(code) + " on " + r.RemoteAddr + r.URL.Path + color.ANSI_COLOR("RESET"))
 	}
 	return
 }
@@ -144,7 +149,7 @@ func main() {
 	fmt.Printf("Starting server for testing HTTP POST on http://localhost:8080 ...\n")
 
 	//Commence le serveur sur le Port 8080
-	if err := http.ListenAndServe(":8080", nil); err != nil {
+	if err := http.ListenAndServe("127.0.0.1:8080", nil); err != nil {
 		log.Fatal(err)
 	}
 }
