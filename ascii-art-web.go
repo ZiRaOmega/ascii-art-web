@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -63,12 +64,18 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 	//Récupération Du Texte à Transformer et du Font choisi envoyé par la methode Post
 	inputText := r.FormValue("inputText")
 	Font := r.FormValue("Font")
+	//fmt.Println(inputText)
 
 	//Suppression des caractère de Retour a la ligne
-	inputText = strings.Replace(inputText, `\n`, "\n", -1)
-	inputText = strings.Replace(inputText, `\r`, "\n", -1)
-	to_print_slice := strings.Split(inputText, "\n")
+	inputText = strings.ReplaceAll(inputText, `\r\n`, `\n`)
 
+	//fmt.Println(inputText)
+	inputText = strings.ReplaceAll(inputText, `\n`, string(rune(10)))
+	to_print_slice := strings.Split(inputText, string(rune(10)))
+	to_print_slice = append(to_print_slice, "\r")
+	//fmt.Println(inputText)
+
+	//fmt.Println(to_print_slice)
 	// Création d'une nouvelle instance de template
 	t := template.New("index")
 
@@ -89,10 +96,17 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 	for i := 0; i < len(to_print_slice); i++ {
 		if (i < len(to_print_slice[i])) && to_print_slice[i][(len(to_print_slice[i])-1):] != "\r" {
 			result += Show_ascii(Get_ascii_char(to_print_slice[i], Font))
-		} else if i < len(to_print_slice[i]) {
-			to_print_slice[i] = to_print_slice[i][:len(to_print_slice[i])-1]
+		} else if i < len(to_print_slice[i]) && to_print_slice[i][(len(to_print_slice[i])-1):] == "\r" {
+			//to_print_slice[i] = strings.ReplaceAll(to_print_slice[i], string(rune(10)), "_")
+			//to_print_slice[i] = to_print_slice[i][:len(to_print_slice[i])-1]
+			result += Show_ascii(Get_ascii_char(to_print_slice[i][:len(to_print_slice[i])-1], Font))
+		} else {
+			re := regexp.MustCompile(`\r?\n`)
+			to_print_slice[i] = re.ReplaceAllString(to_print_slice[i], ``)
+			to_print_slice[i] = strings.ReplaceAll(to_print_slice[i], "\r", "")
+			inputText = strings.ReplaceAll(inputText, "\r", "")
 			result += Show_ascii(Get_ascii_char(to_print_slice[i], Font))
-
+			//fmt.Println("error" + to_print_slice[i] + "l")
 		}
 	}
 
@@ -120,7 +134,7 @@ func Status_code(w http.ResponseWriter, r *http.Request) int {
 		//fmt.Println("erreur")
 		return http.StatusNotFound
 	} else {
-		return http.StatusOK
+		return http.StatusBadRequest
 	}
 }
 
