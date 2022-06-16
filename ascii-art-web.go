@@ -111,9 +111,10 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//Creation d'une Page avec la valeur ascii et la taille du textarea avec un taille supérieur à 175 à l'aide de la struc Page
-	col := (len(strings.Join(to_print_slice, "")) / len(to_print_slice)) * 9
-	if col < 175 {
-		col = 175
+	col := (len(strings.Join(to_print_slice, "")) * 9)
+	//fmt.Println(col)
+	if col < 195 {
+		col = 195
 	}
 	p := Page{result, col, len(to_print_slice) * 9, inputText, inputText}
 
