@@ -132,7 +132,6 @@ func Status_code(w http.ResponseWriter, r *http.Request) int {
 	if r.URL.Path == "/" || r.URL.Path == "/ascii-art" {
 		return http.StatusOK
 	} else if _, err := os.Stat("." + r.URL.Path); errors.Is(err, os.ErrNotExist) {
-		//fmt.Println("erreur")
 		return http.StatusNotFound
 	} else {
 		return http.StatusBadRequest
@@ -164,7 +163,7 @@ func main() {
 	fmt.Printf("Starting server for testing HTTP POST on http://localhost:8080 ...\n")
 
 	//Commence le serveur sur le Port 8080
-	if err := http.ListenAndServe("127.0.0.1:8080", nil); err != nil {
+	if err := http.ListenAndServe(":8080", nil); err != nil {
 		log.Fatal(err)
 	}
 }
